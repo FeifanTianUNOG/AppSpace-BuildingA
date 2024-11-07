@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Display - Building A</title>
+    <style>
+        /* 会议条目整体样式 */
+        #meeting-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            position: relative;
+        }
+
+        /* 会议条目的整体容器 */
+        .meeting-wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 10vh;
+            margin: 1vh 0;
+            background-color: #f8f8f8; /* 背景颜色 */
+        }
+
+        /* startTime 样式，占 15% 宽度 */
+        .start-time {
+            background-color: #e6e8e9;
+            color: black;
+            width: 15%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4.5vw; /* 字体大小增加一倍 */
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* 可修改的会议条目的内容，排除 startTime */
+        .meeting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f8f8f8;
+            width: 85%;
+            height: 10vh;
+        }
+
+        /* info 部分样式，占 65% 宽度 */
+        .info {
+            width: 65%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start; /* 新增此行，确保文字左对齐 */
+            padding-left: 2%;
+            color: black;
+            font-size: 2.5vw; /* 字体大小增加一倍 */
+            position: relative;
+        }
+
+        /* 添加竖线 */
+        .info::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 15%;
+            width: 1px;
+            height: 70%;
+            background-color: #999;
+        }
+
+        .title {
+            color: black;
+            font-size: 2.5vw;
+        }
+
+        /* info 部分的副标题是灰色 */
+        .subtitle {
+            color: grey;
+            font-size: 2.3vw;
+        }
+
+        /* room 部分样式，占 17.5% 宽度 */
+        .room {
+            width: 17.5%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 2.5vw; /* 字体大小增加一倍 */
+            position: relative;
+            color: black;
+        }
+
+        .room-text {
+            font-size: 2.5vw;
+            color: black;
+        }
+
+        /* 添加竖线 */
+        .room::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 15%;
+            width: 1px;
+            height: 70%;
+            background-color: #999;
+        }
+
+        /* floor 部分样式，占 17.5% 宽度 */
+        .floor {
+            width: 17.5%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 2.5vw; /* 字体大小增加一倍 */
+            color: black;
+        }
+
+        /* floor 部分的文字是灰色 */
+        .floor-text {
+            font-size: 2.3vw;
+            color: grey;
+        }
+    </style>
+</head>
+<body>
+
+<div id="meeting-wrapper">
+    <div id="meeting-container"></div>
+</div>
+
+<script>
+    const jsonDataUrl = 'https://feifantianunog.github.io/meetingJSONdata/input.json';
+
+    // 获取会议数据并根据过滤条件筛选
+    async function fetchMeetingData() {
+        try {
+            const response = await fetch(jsonDataUrl);
+            const data = await response.json();
+            console.log("Fetched Data:", data);
+
+            const filteredData = data.filter(item => {
+                const building = getBuilding(item.room);
+                // Building A 和 endTime 大于 10:00:00
+                if (building !== 'A') return false;
+               
+            //     const now = new Date();
+            //     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            //     return item.endTime > currentTime;
+            // });
+            
+                return item.endTime > '10:00:00';
+            });
+
+            console.log("Filtered Data:", filteredData);
+            return filteredData.slice(0, 5); // 限制为前5条数据
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+    }
+
+    // Building A和Building E的过滤逻辑
+    function getBuilding(room) {
+        if (['XXVII', 'XXIV', 'XXIII', 'XXV', 'XXII', 'XVII', 'XIX', 'E.3023 (Jura)'].includes(room)) {
+            return 'E';
+        } else if (['IX', 'III', 'VIII'].includes(room)) {
+            return 'A';
+        } else if (room === 'Tempus') {
+            return 'Tempus Pavilion';
+        } else if (['PW1', 'PWG'].includes(room)) {
+            return 'Palais Wilson';
+        } else {
+            return 'Unknown';
+        }
+    }
+
+    // 渲染会议数据
+    async function displayMeetings() {
+        const data = await fetchMeetingData();
+        const meetingContainer = document.getElementById('meeting-container');
+        meetingContainer.innerHTML = '';
+
+        let allMeetingsHTML = '';
+        data.forEach(item => {
+            const meetingItem = `
+                <div class="meeting-wrapper">
+                    <div class="start-time">${formatTime(item.startTime)}</div>
+                    <div class="meeting-item">
+                        <div class="info">
+                            <div class="title">${item.organAcronym}</div>
+                            <div class="subtitle">${item.shortTitle}</div>
+                        </div>
+                        <div class="room">
+                            <div class="room-text">${item.room}</div>
+                            <div class="floor-text">Salle/Room</div>
+                        </div>
+                        <div class="floor">
+                            <div class="room-text">Niveau 3</div>
+                            <div class="floor-text">Etage/Floor</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            allMeetingsHTML += meetingItem;
+        });
+
+        meetingContainer.insertAdjacentHTML('beforeend', allMeetingsHTML);
+        console.log("Meetings displayed.");
+    }
+
+    // 格式化时间
+    function formatTime(timeStr) {
+        return timeStr.slice(0, 5);
+    }
+
+    // 页面加载时获取并展示数据
+    displayMeetings();
+</script>
+</body>
+</html>
